@@ -5,69 +5,89 @@
     MultiParamTypeClasses,
     FunctionalDependencies,
     FlexibleInstances,
-    UndecidableInstances
+    UndecidableInstances,
+    EmptyCase,
+    DataKinds,
+    PolyKinds,
+    TypeFamilies
 #-}
+{-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
-module PropTypes () where
+module PropTypes where
 
--- Representation of the false proposition. 
--- Since this type has no constructor, no data inhabits this type (=there is no way to prove it)
-data FalseP
+    -- Representation of the false proposition. 
+    -- Since this type has no constructor, no data inhabits this type (=there is no way to prove it)
+    data Void -- = forall a . a, which is isomorphic to the data type with no constructor
+    
+    data Equal a b where
+        Refl :: Equal a a
 
-data Equal a b where
-    Refl :: Equal a a
+    -- Logical connectives --
 
--- Logical connectives --
+    type Not a = a -> Void 
 
-type NotP a = a -> FalseP 
+    type And a b = (a,b) 
 
-type AndP a b = (a,b) 
+    type Iff a b = And (a -> b) (b -> a)
 
-data OrP a b = OrL a | OrR b
+    data Or a b = OrL a | OrR b
 
-exfalso :: forall a. FalseP -> a
-exfalso contra = a
+    -- ex falso quodlibet
+    absurd :: Void -> a
+    absurd contra = case contra of {}
 
-andI :: a -> b -> AndP a b
-andI a b = (a,b)
+    andI :: a -> b -> And a b
+    andI a b = (a,b)
 
-andER :: AndP a b -> a
-andER (a,b) = a
+    andER :: And a b -> a
+    andER (a,b) = a
 
-andEL :: AndP a b -> b
-andEL (a,b) = b
+    andEL :: And a b -> b
+    andEL (a,b) = b
 
-orIL :: a -> OrP a b
-orIL a = OrL a
+    orIL :: a -> Or a b
+    orIL a = OrL a
 
-orIR :: b -> OrP a b
-orIR b = OrR b
+    orIR :: b -> Or a b
+    orIR b = OrR b
 
-orE :: (OrP a b) -> (a -> q) -> (b -> q) -> q
-orE (OrL a) f _ = f a
-orE (OrR b) _ g = g b
+    orE :: (Or a b) -> (a -> q) -> (b -> q) -> q
+    orE (OrL a) f _ = f a
+    orE (OrR b) _ g = g b
+     
+    -- inspired by https://typesandkinds.wordpress.com/2012/12/01/decidable-propositional-equality-in-haskell/
+    type DecidableEquality a b = Or (Equal a b) (Not (Equal a b))
+    
+    data Nat = Z | S Nat
 
-data Z 
-data S a
+    -- addition on type-level. Note that DataKind and TypeFamilies are necessary for this.
+    infixl 6 :+
+    type family   (n :: Nat) :+ (m :: Nat) :: Nat
+    type instance Z     :+ m = m
+    type instance (S n) :+ m = S (n :+ m)
+    data SNat :: Nat -> * where
+        SZero :: SNat Z
+        SSucc :: SNat n -> SNat (S n)
+    
+    decNatEq :: SNat a -> SNat b -> DecidableEquality a b
+    decNatEq SZero SZero = OrL Refl
+    decNatEq (SSucc x') (SSucc y') = case decNatEq x' y' of
+        OrL Refl -> OrL Refl
+        OrR contra -> OrR (\y -> case y of Refl -> contra Refl)
+    decNatEq SZero (SSucc _) = OrR (\y -> case y of {}) -- impossible case
+    decNatEq (SSucc _) SZero = OrR (\y -> case y of {}) -- impossible case
 
-class Add a b ab | a b -> ab
-instance Add Z b b
-instance (Add a b ab) => Add (S a) b (S ab)
--- redundant?
-instance (Add a b ab) => (Add b a ab)
+    two = SSucc (SSucc SZero)
+    three = SSucc two
+    
+    eq3 :: DecidableEquality three (SSucc two)
+    eq3 = OrL Refl
+    
+    -- plus_fact1 :: (Sum One Two (S Two))
+    -- plus_fact1 = Refl
 
-type One = S Z 
-type Two = S One 
-type Three = S Two
+    -- twoNotEqThree :: (Equal Two Three) -> Void
+    -- twoNotEqThree contra =   
 
-eq3 :: Equal Three Three
-eq3 = Refl
-
-absurdium :: FalseP -> a
-absurdium = FalseP
-
-twoNotEqThree :: NotP (Equal Two Three)
-twoNotEqThree = (\x Refl -> FalseP)
-
-impliesTrans :: (a -> b) -> (b -> c) -> a -> c
-impliesTrans f g = g . f -- equivalent to impliesTrans f g x = g (f x)
+    impliesTrans :: (a -> b) -> (b -> c) -> a -> c
+    impliesTrans f g = g . f -- equivalent to impliesTrans f g x = g (f x)

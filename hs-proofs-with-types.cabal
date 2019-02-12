@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7f953abfd00caf0f379713b8bbd51d15bef708d4b709a7aa7572381a421b1be4
+-- hash: 60fa9bcfcbcf172c150ce91db7f5c5b80d021e4c9a86a4c26fc0bb9c3975a19e
 
 name:           hs-proofs-with-types
 version:        0.1.0.0
@@ -27,7 +27,8 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      PeanoNumbers
+      PeanoNumbersV2
       PropTypes
   other-modules:
       Paths_hs_proofs_with_types

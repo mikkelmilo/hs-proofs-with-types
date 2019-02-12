@@ -8,6 +8,7 @@
     UndecidableInstances,
     EmptyCase
 #-}
+{-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
 module PeanoNumbers where
     -- Peano Numbers

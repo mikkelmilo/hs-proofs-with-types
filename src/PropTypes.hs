@@ -114,3 +114,9 @@ module PropTypes where
                 OrR b -> orIR (orIL b)
             OrR c -> orIR (orIR c)
         )
+
+    eq_sym :: Equal a b -> Equal b a
+    eq_sym Refl = Refl
+
+    eq_trans :: Equal a b -> Equal b c -> Equal a c
+    eq_trans Refl Refl = Refl

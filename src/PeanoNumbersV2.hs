@@ -45,6 +45,15 @@ module PeanoNumbersV2 where
     eq3 :: DecidableEquality three three
     eq3 = OrL Refl
     
+    succCong :: (Equal n m) -> Equal (SSucc n) (SSucc m)
+    succCong Refl = Refl
+
+    predCong :: Equal (SSucc n) (SSucc m) -> Equal n m
+    predCong Refl = Refl 
+
+    plusCong :: (Equal n m) -> (Equal p q) -> Equal (n :+ p) (m :+ q)
+    plusCong Refl Refl = Refl
+
     -- plus_fact1 :: (Sum One Two (S Two))
     -- plus_fact1 = Refl
 

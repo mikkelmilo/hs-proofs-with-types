@@ -9,7 +9,8 @@
     EmptyCase,
     DataKinds,
     PolyKinds,
-    TypeFamilies
+    TypeFamilies,
+    AllowAmbiguousTypes
 #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
@@ -39,7 +40,8 @@ module PeanoNumbersV2 where
     decNatEq SZero (SSucc _) = OrR (\y -> case y of {}) -- impossible case
     decNatEq (SSucc _) SZero = OrR (\y -> case y of {}) -- impossible case
 
-    two = SSucc (SSucc SZero)
+    one = SSucc SZero
+    two = SSucc one
     three = SSucc two
     
     eq3 :: DecidableEquality three three
@@ -54,8 +56,12 @@ module PeanoNumbersV2 where
     plusCong :: (Equal n m) -> (Equal p q) -> Equal (n :+ p) (m :+ q)
     plusCong Refl Refl = Refl
 
-    -- plus_fact1 :: (Sum One Two (S Two))
-    -- plus_fact1 = Refl
+    plusAssoc :: SNat a -> SNat b -> SNat c -> Equal (a :+ (b :+ c)) ((a :+ b) :+ c)
+    plusAssoc SZero b c = Refl 
+    plusAssoc (SSucc a) b c = gcastWith (plusAssoc a b c) Refl 
 
-    -- twoNotEqThree :: (Equal Two Three) -> Void
-    -- twoNotEqThree contra =   
+    --plus_fact1 :: Equal (one :+ two) three
+    --plus_fact1 = Refl
+
+    --twoNotEqThree :: (Equal Two Three) -> Void
+    --twoNotEqThree contra = Refl   

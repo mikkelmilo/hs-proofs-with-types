@@ -9,7 +9,8 @@
     EmptyCase,
     DataKinds,
     PolyKinds,
-    TypeFamilies
+    TypeFamilies,
+    RankNTypes
 #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
@@ -21,6 +22,12 @@ module PropTypes where
     
     data Equal a b where
         Refl :: Equal a a
+
+    -- requires RankNTypes
+    -- takes two values and cast their type to the second, or something...
+    -- "casts" between two equal types because (a ~ b) is assumed for r
+    gcastWith :: Equal a b -> ((a ~ b) => r) -> r
+    gcastWith Refl x = x
 
     -- Logical connectives --
 

@@ -42,6 +42,9 @@ module PropTypes where
     andI :: a -> b -> And a b
     andI a b = (a,b)
 
+    iffI :: (a -> b) -> (b -> a) -> Iff a b
+    iffI ab ba = andI ab ba
+
     andER :: And a b -> a
     andER (a,b) = a
 
@@ -57,8 +60,7 @@ module PropTypes where
     orE :: (Or a b) -> (a -> q) -> (b -> q) -> q
     orE (OrL a) f _ = f a
     orE (OrR b) _ g = g b
-     
-
+    
     -- Various (fairly trivial) theorems/tautologies of propositional logic.
     -- Inspired by the theorems from https://www.cs.princeton.edu/courses/archive/fall07/cos595/stdlib/html/Coq.Init.Logic.html
 
@@ -86,6 +88,9 @@ module PropTypes where
 
     iff_refl :: Iff a a
     iff_refl = andI (\x -> x) (\x -> x)
+
+    false_iff_false :: Iff Void Void
+    false_iff_false = iff_refl
 
     iff_trans :: (Iff a b) -> (Iff b c) -> (Iff a c)
     iff_trans (ab, ba) (bc, cb) = andI (bc . ab) (ba . cb) -- equivalent to andI (\x -> bc (ab x)) (\x -> ba (cb x))

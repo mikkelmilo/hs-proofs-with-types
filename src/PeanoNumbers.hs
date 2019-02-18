@@ -6,51 +6,62 @@
     FunctionalDependencies,
     FlexibleInstances,
     UndecidableInstances,
-    EmptyCase
+    EmptyCase,
+    DataKinds,
+    PolyKinds,
+    TypeFamilies,
+    AllowAmbiguousTypes
 #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
+
 module PeanoNumbers where
-    -- Peano Numbers
-    -- heavily inspiered by article.gmane.org/gmane.comp.lang.haskell.general/13223 
-    data Z
-    data S a
-    __ = __
 
-    class Sum2 a b c | a b -> c, a c -> b
-    instance Sum2 Z a a
-    instance Sum2 a b c => Sum2 (S a) b (S c)
-
-    class Sum a b c | a b -> c, a c -> b, b c -> a
-    instance (Sum2 a b c, Sum2 b a c) => Sum a b c
-
-
-    add :: Sum a b c => a -> b -> c
-    add = __ -- implementation doesn't matter
-
-    type One = S Z
-    type Two = S One
-    type Three = S Two
-
-    zero = __ :: Z
-    one = __ :: One
-    two = __ :: Two
-    three = __ :: Three
-    three' = add one two
-
-    add3 = \x -> (add two x  `asTypeOf` three)
+    import PropTypes
+    -- inspired by https://typesandkinds.wordpress.com/2012/12/01/decidable-propositional-equality-in-haskell/
+    type DecidableEquality a b = Or (Equal a b) (Not (Equal a b))
     
-    --add1 :: (Sum2 One One Two) => a
-    --add1 = __
+    data Nat = Z | S Nat
 
-
-    class Number a where
-        numValue :: a -> Int
+    -- addition on type-level. Note that DataKind and TypeFamilies are necessary for this.
+    infixl 6 :+
+    type family   (n :: Nat) :+ (m :: Nat) :: Nat
+    type instance Z     :+ m = m
+    type instance (S n) :+ m = S (n :+ m)
+    data SNat :: Nat -> * where
+        SZero :: SNat Z
+        SSucc :: SNat n -> SNat (S n)
     
-    numPred :: S a -> a
-    numPred = const undefined
+    decNatEq :: SNat a -> SNat b -> DecidableEquality a b
+    decNatEq SZero SZero = OrL Refl
+    decNatEq (SSucc x') (SSucc y') = case decNatEq x' y' of
+        OrL Refl -> OrL Refl
+        OrR contra -> OrR (\y -> case y of Refl -> contra Refl)
+    decNatEq SZero (SSucc _) = OrR (\y -> case y of {}) -- impossible case
+    decNatEq (SSucc _) SZero = OrR (\y -> case y of {}) -- impossible case
 
-    instance Number Z where
-        numValue = const 0
-    instance Number x => Number (S x) where
-        numValue x = numValue (numPred x) + 1
+    one = SSucc SZero
+    two = SSucc one
+    three = SSucc two
+    
+    eq3 :: DecidableEquality three three
+    eq3 = OrL Refl
+    
+    succCong :: (Equal n m) -> Equal (SSucc n) (SSucc m)
+    succCong Refl = Refl
+
+    predCong :: Equal (SSucc n) (SSucc m) -> Equal n m
+    predCong Refl = Refl 
+
+    plusCong :: (Equal n m) -> (Equal p q) -> Equal (n :+ p) (m :+ q)
+    plusCong Refl Refl = Refl
+
+    plusAssoc :: SNat a -> SNat b -> SNat c -> Equal (a :+ (b :+ c)) ((a :+ b) :+ c)
+    plusAssoc SZero b c = Refl 
+    plusAssoc (SSucc a) b c = gcastWith (plusAssoc a b c) Refl 
+
+    --plus_fact1 :: Equal (one :+ two) three
+    --plus_fact1 = Refl
+
+    --twoNotEqThree :: (Equal Two Three) -> Void
+    --twoNotEqThree contra = Refl   
